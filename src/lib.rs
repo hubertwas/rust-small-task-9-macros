@@ -50,9 +50,9 @@ struct EachAttribute {
 
 fn get_builder_attribute(field: &syn::Field) -> Option<EachAttribute> {
     for attr in &field.attrs {
-        if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "builder" {
-            if let Ok(Meta::List(meta_list)) = attr.parse_meta() {
-                for nested_meta in &meta_list.nested {
+        if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "builder"
+            && let Ok(Meta::List(meta_list)) = attr.parse_meta()
+                && let Some(nested_meta) = (&meta_list.nested).into_iter().next() {
                     if let NestedMeta::Meta(Meta::NameValue(name_value)) = nested_meta
                         && name_value.path.segments.len() == 1
                         && name_value.path.segments[0].ident == "each"
@@ -62,8 +62,6 @@ fn get_builder_attribute(field: &syn::Field) -> Option<EachAttribute> {
                         return Some(EachAttribute { method_name: Err(syn::Error::new(meta_list.span(), "expected `builder(each = \"...\")`"))});
                     }
                 }
-            }
-        }
     }
     None
 }
@@ -106,7 +104,7 @@ fn to_builder_method(field: &syn::Field) -> TokenStream {
                 self
             }
         };
-        if extend_method_ident.to_string() == ident.to_string() {
+        if ident == extend_method_ident {
             extend_method
         } else {
             quote! {
@@ -169,7 +167,7 @@ fn to_struct_field(field: &syn::Field) -> TokenStream {
 
     quote! {
         #name: #field_ty
-    }.into()
+    }
 
 }
 
